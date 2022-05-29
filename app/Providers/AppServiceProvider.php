@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Monolog\Logger;
 use Yansongda\Pay\Pay;
 
@@ -55,6 +61,29 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // sql 日志
+        if (config('app.debug')) {
+            Schema::defaultStringLength(191);
+            DB::listen(function ($query) {
+                /** @var QueryExecuted $query */
+                // dd($query->connection, $query->connection->getDatabaseName(), $query);
+                // 获取数据库名称
+                $sql = 'use ' . $query->connection->getDatabaseName() . ';' . "\n" . $query->sql;
+                // $sql = $query->sql;
+                if (! Arr::isAssoc($query->bindings)) {
+                    foreach ($query->bindings as $value) {
+                        if ($value instanceof \DateTime) {
+                            $value = $value->format('Y-m-d H:i:s');
+                        }
+                        $sql = Str::replaceFirst('?', "'{$value}'", $sql);
+                    }
+                }
+
+                // dd(request()->getClientIp(), request()->getMethod(), request()->getPathInfo(), request(), $sql);
+                Log::info(sprintf('[%s][%s][%s]' . "\n" . '%s;' . "\n", $query->time, request()->getMethod(), request
+                ()->fullUrl(), $sql));
+            });
+        }
 
         \Illuminate\Pagination\Paginator::useBootstrap();
     }
