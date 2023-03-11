@@ -34,6 +34,12 @@
         "preferred-install": "dist",
         "sort-packages": true
     },
+    "repositories": [
+        {
+            "type": "gitlab",
+            "url": "https://git.papamk.com/xgrit/nova"
+        }
+    ],
     "extra": {
         "laravel": {
             "dont-discover": []
